@@ -1,0 +1,8 @@
+---
+# Deploiement automatique cPanel apres "Update from Remote" (GitHub).
+# Remplace USERNAME par ton identifiant cPanel si tu utilises un chemin de deploiement separe.
+deployment:
+  tasks:
+    - export NODE_ENV=production
+    - cd $DEPLOYPATH
+    - /bin/bash scripts/cpanel-deploy.sh
