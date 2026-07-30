@@ -12,11 +12,16 @@ echo "==> Deploiement dans: $ROOT"
 export NODE_ENV=production
 
 echo "==> Installation des dependances..."
-# Next.js a besoin des devDependencies (typescript, tailwind...) pour le build
-npm install
+# devDependencies (typescript, tailwind) necessaires pour next build
+NODE_ENV=development npm install --include=dev
+
+if [ ! -f "prisma/schema.prisma" ]; then
+  echo "==> Restauration prisma/ depuis git..."
+  git checkout HEAD -- prisma/ 2>/dev/null || true
+fi
 
 echo "==> Generation du client Prisma..."
-npx prisma generate
+npx prisma generate --schema="$ROOT/prisma/schema.prisma"
 
 echo "==> Application des migrations..."
 npx prisma migrate deploy

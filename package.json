@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate || true",
+    "postinstall": "node scripts/postinstall.js",
     "prestart": "prisma generate && prisma migrate deploy",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
@@ -20,6 +20,7 @@
     "cpanel:deploy": "bash scripts/cpanel-deploy.sh"
   },
   "prisma": {
+    "schema": "prisma/schema.prisma",
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
