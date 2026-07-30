@@ -28,7 +28,12 @@ const prismaClient = path.join(__dirname, "node_modules", ".prisma", "client");
 if (!fs.existsSync(prismaClient)) {
   console.log("Client Prisma absent, generation en cours...");
   try {
-    execSync("npx prisma generate", { stdio: "inherit", cwd: __dirname });
+    const prismaBin = path.join(__dirname, "node_modules", ".bin", "prisma");
+    const schema = path.join(__dirname, "prisma", "schema.prisma");
+    execSync(`"${prismaBin}" generate --schema="${schema}"`, {
+      stdio: "inherit",
+      cwd: __dirname,
+    });
   } catch (err) {
     console.error("Echec prisma generate:", err.message);
     process.exit(1);

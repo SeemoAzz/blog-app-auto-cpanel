@@ -12,21 +12,24 @@ if [ -d "$NODE_BIN" ]; then
   export PATH="$NODE_BIN:$PATH"
 fi
 
-SCHEMA="$ROOT/prisma/schema.prisma"
+if [ -L "node_modules" ]; then
+  echo "==> Suppression du symlink node_modules..."
+  rm node_modules
+fi
 
-export NODE_ENV=production
+SCHEMA="$ROOT/prisma/schema.prisma"
+PRISMA="$ROOT/node_modules/.bin/prisma"
 
 echo "==> Installation des dependances..."
-NODE_ENV=development npm install --include=dev --prefix "$ROOT"
+NODE_ENV=development npm install --include=dev
 
 echo "==> Generation du client Prisma..."
-npx prisma generate --schema="$SCHEMA"
+"$PRISMA" generate --schema="$SCHEMA"
 
 echo "==> Application des migrations..."
-npx prisma migrate deploy --schema="$SCHEMA"
+"$PRISMA" migrate deploy --schema="$SCHEMA"
 
-echo "==> Build Next.js..."
-cd "$ROOT"
+echo "==> Build Next.js (webpack)..."
 NODE_ENV=production npm run build
 
 mkdir -p public/uploads
