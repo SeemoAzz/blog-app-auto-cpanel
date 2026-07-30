@@ -1,9 +1,40 @@
 /**
  * Point d'entrée pour cPanel / Namecheap (Setup Node.js App).
  * cPanel injecte automatiquement PORT et NODE_ENV=production.
+ *
+ * IMPORTANT : lancez d'abord `bash scripts/cpanel-install.sh` via Terminal cPanel
+ * (npm install + prisma generate + build). Demarrer sans build provoque des erreurs Prisma.
  */
 const { createServer } = require("http");
 const { parse } = require("url");
+const fs = require("fs");
+const path = require("path");
+const { execSync } = require("child_process");
+
+// Verifie que le build Next.js existe
+const nextDir = path.join(__dirname, ".next");
+if (!fs.existsSync(nextDir)) {
+  console.error(
+    "ERREUR: dossier .next introuvable. Lancez via Terminal cPanel :\n" +
+      "  source ~/nodevenv/VOTRE_APP/20/bin/activate\n" +
+      "  cd ~/VOTRE_APP\n" +
+      "  bash scripts/cpanel-install.sh",
+  );
+  process.exit(1);
+}
+
+// Regenere le client Prisma si absent (fix erreur prisma/build sur cPanel)
+const prismaClient = path.join(__dirname, "node_modules", ".prisma", "client");
+if (!fs.existsSync(prismaClient)) {
+  console.log("Client Prisma absent, generation en cours...");
+  try {
+    execSync("npx prisma generate", { stdio: "inherit", cwd: __dirname });
+  } catch (err) {
+    console.error("Echec prisma generate:", err.message);
+    process.exit(1);
+  }
+}
+
 const next = require("next");
 
 const port = parseInt(process.env.PORT, 10) || 3000;

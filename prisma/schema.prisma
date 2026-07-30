@@ -2,7 +2,9 @@
 // SQLite par defaut. Pour Postgres: changer provider en "postgresql".
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // Binaires requis pour hebergement Linux (cPanel / Namecheap)
+  binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
 }
 
 datasource db {

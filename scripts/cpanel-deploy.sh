@@ -12,7 +12,8 @@ echo "==> Deploiement dans: $ROOT"
 export NODE_ENV=production
 
 echo "==> Installation des dependances..."
-npm ci --omit=dev
+# Next.js a besoin des devDependencies (typescript, tailwind...) pour le build
+npm install
 
 echo "==> Generation du client Prisma..."
 npx prisma generate

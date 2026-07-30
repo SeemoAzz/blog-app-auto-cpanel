@@ -110,27 +110,21 @@ DATABASE_URL="file:/home/VOTRE_USER/blogdata/prod.db"
 
 ## Etape 5 — Premier deploiement
 
-Dans le **Terminal cPanel** :
+Dans le **Terminal cPanel**, utilisez la commande d'activation affichee en haut de **Setup Node.js App**, puis :
 
 ```bash
-cd ~/blog
-npm run cpanel:deploy
+# Exemple (adaptez selon ce que cPanel affiche) :
+source /home/araszfcr/nodevenv/blog-app-auto-cpanel/20/bin/activate
+cd /home/araszfcr/blog-app-auto-cpanel
+
+bash scripts/cpanel-install.sh
 ```
 
-Ou etape par etape :
+Ce script fait tout automatiquement : `npm install`, `prisma generate`, migrations, seed, build.
 
-```bash
-cd ~/blog
-npm ci --omit=dev
-npx prisma generate
-npx prisma migrate deploy
-npm run db:seed          # une seule fois : cree l'admin + contenu demo
-npm run build
-mkdir -p public/uploads
-chmod 755 public/uploads
-```
+> **Ne cliquez PAS sur "START APP" avant d'avoir lance ce script.** Sinon vous obtiendrez une erreur Prisma (`prisma/bui...`).
 
-Puis dans **Setup Node.js App** : cliquez **Restart** sur votre application.
+Puis dans **Setup Node.js App** : cliquez **Restart** (pas START si deja configure).
 
 ---
 
@@ -154,7 +148,7 @@ Verifiez aussi :
 1. cPanel > **Git Version Control** > votre depot
 2. Cliquez **Pull or Deploy** (ou **Update from Remote**)
 3. Le fichier `.cpanel.yml` execute automatiquement :
-   - `npm ci --omit=dev`
+   - `npm install`
    - `prisma generate` + `migrate deploy`
    - `npm run build`
 4. **Setup Node.js App** > **Restart**
@@ -189,6 +183,23 @@ npm run cpanel:deploy
 ---
 
 ## Depannage
+
+### Erreur `prisma/bui...` ou Prisma Client introuvable
+
+Cette erreur signifie que l'app demarre **avant** l'installation complete. Solution :
+
+```bash
+source /home/araszfcr/nodevenv/blog-app-auto-cpanel/20/bin/activate
+cd /home/araszfcr/blog-app-auto-cpanel
+bash scripts/cpanel-install.sh
+```
+
+Puis **Restart** dans Setup Node.js App.
+
+Causes frequentes :
+- Clic sur **START APP** ou **Run NPM Install** sans lancer le **build** (`npm run build`)
+- Dossier `~/blogdata` inexistant → `mkdir -p ~/blogdata && chmod 750 ~/blogdata`
+- Client Prisma non genere → `npx prisma generate`
 
 ### Erreur 503 / Application ne demarre pas
 
