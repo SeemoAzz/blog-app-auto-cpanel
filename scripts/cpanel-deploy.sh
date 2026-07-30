@@ -29,8 +29,8 @@ echo "==> Generation du client Prisma..."
 echo "==> Application des migrations..."
 "$PRISMA" migrate deploy --schema="$SCHEMA"
 
-echo "==> Build Next.js (webpack)..."
-NODE_ENV=production npm run build
+echo "==> Build Next.js (webpack, 1 worker)..."
+NODE_ENV=production NODE_OPTIONS="--max-old-space-size=512" npm run build
 
 mkdir -p public/uploads
 
