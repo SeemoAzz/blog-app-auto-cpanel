@@ -114,8 +114,8 @@ Dans le **Terminal cPanel**, utilisez la commande d'activation affichee en haut 
 
 ```bash
 # Exemple (adaptez selon ce que cPanel affiche) :
-source /home/araszfcr/nodevenv/blog-app-auto-cpanel/20/bin/activate
-cd /home/araszfcr/blog-app-auto-cpanel
+source /home/araszfcr/nodevenv/blog2/blog-app-auto-cpanel/20/bin/activate
+cd /home/araszfcr/blog2/blog-app-auto-cpanel
 
 bash scripts/cpanel-install.sh
 ```
@@ -184,13 +184,32 @@ npm run cpanel:deploy
 
 ## Depannage
 
+### Erreur `node_modules/.bin/prisma: No such file or directory`
+
+cPanel cree souvent un `node_modules` incomplet (symlink nodevenv ou **Run NPM Install** sans devDependencies). `npm install` peut alors afficher *up to date* sans installer Prisma.
+
+Dans le Terminal cPanel (avec le venv active) :
+
+```bash
+source /home/araszfcr/nodevenv/blog2/blog-app-auto-cpanel/20/bin/activate
+cd /home/araszfcr/blog2/blog-app-auto-cpanel
+
+rm -rf node_modules
+NODE_ENV=development npm install --include=dev
+ls node_modules/.bin/prisma   # doit exister
+
+bash scripts/cpanel-install.sh
+```
+
+> **Ne pas** cliquer sur **Run NPM Install** dans cPanel avant d'avoir lance `cpanel-install.sh` — cela recree un `node_modules` lie au nodevenv.
+
 ### Erreur `prisma/bui...` ou Prisma Client introuvable
 
 Cette erreur signifie que l'app demarre **avant** l'installation complete. Solution :
 
 ```bash
-source /home/araszfcr/nodevenv/blog-app-auto-cpanel/20/bin/activate
-cd /home/araszfcr/blog-app-auto-cpanel
+source /home/araszfcr/nodevenv/blog2/blog-app-auto-cpanel/20/bin/activate
+cd /home/araszfcr/blog2/blog-app-auto-cpanel
 bash scripts/cpanel-install.sh
 ```
 

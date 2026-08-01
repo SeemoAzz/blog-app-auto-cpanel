@@ -3,31 +3,22 @@
 
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-cd "$ROOT"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=cpanel-common.sh
+source "$SCRIPT_DIR/cpanel-common.sh"
+cpanel_setup_path
 
-APP_NAME="$(basename "$ROOT")"
-NODE_BIN="$HOME/nodevenv/$APP_NAME/20/bin"
-if [ -d "$NODE_BIN" ]; then
-  export PATH="$NODE_BIN:$PATH"
-fi
-
-if [ -L "node_modules" ]; then
-  echo "==> Suppression du symlink node_modules..."
-  rm node_modules
-fi
+cpanel_ensure_local_node_modules
 
 SCHEMA="$ROOT/prisma/schema.prisma"
-PRISMA="$ROOT/node_modules/.bin/prisma"
 
-echo "==> Installation des dependances..."
-NODE_ENV=development npm install --include=dev
+cpanel_npm_install
 
 echo "==> Generation du client Prisma..."
-"$PRISMA" generate --schema="$SCHEMA"
+cpanel_prisma "$SCHEMA" generate
 
 echo "==> Application des migrations..."
-"$PRISMA" migrate deploy --schema="$SCHEMA"
+cpanel_prisma "$SCHEMA" migrate deploy
 
 echo "==> Build Next.js (webpack, 1 worker)..."
 NODE_ENV=production NODE_OPTIONS="--max-old-space-size=512" npm run build

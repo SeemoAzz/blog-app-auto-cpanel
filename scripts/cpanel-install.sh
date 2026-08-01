@@ -4,14 +4,10 @@
 
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-cd "$ROOT"
-
-APP_NAME="$(basename "$ROOT")"
-NODE_BIN="$HOME/nodevenv/$APP_NAME/20/bin"
-if [ -d "$NODE_BIN" ]; then
-  export PATH="$NODE_BIN:$PATH"
-fi
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=cpanel-common.sh
+source "$SCRIPT_DIR/cpanel-common.sh"
+cpanel_setup_path
 
 echo "==> Dossier application: $ROOT"
 echo "==> Node: $(node -v) — npm: $(npm -v)"
@@ -25,24 +21,19 @@ mkdir -p ~/blogdata && chmod 750 ~/blogdata
 mkdir -p public/uploads && chmod 755 public/uploads
 
 # cPanel lie node_modules -> nodevenv : Turbopack/webpack echoue au build
-if [ -L "node_modules" ]; then
-  echo "==> Suppression du symlink node_modules (nodevenv)..."
-  rm node_modules
-fi
+cpanel_ensure_local_node_modules
 
 SCHEMA="$ROOT/prisma/schema.prisma"
 
-echo "==> Installation npm (node_modules local)..."
-NODE_ENV=development npm install --include=dev
+cpanel_npm_install
 
-PRISMA="$ROOT/node_modules/.bin/prisma"
 TSX="$ROOT/node_modules/tsx/dist/cli.mjs"
 
 echo "==> Generation Prisma..."
-"$PRISMA" generate --schema="$SCHEMA"
+cpanel_prisma "$SCHEMA" generate
 
 echo "==> Migrations..."
-"$PRISMA" migrate deploy --schema="$SCHEMA"
+cpanel_prisma "$SCHEMA" migrate deploy
 
 echo "==> Seed admin..."
 node "$TSX" prisma/seed.ts || echo "(seed deja fait)"
