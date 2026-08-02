@@ -1,0 +1,15 @@
+# Copiez ce fichier en cpanel.config et adaptez pour CHAQUE projet/deploiement.
+#   cp cpanel.config.example cpanel.config
+#
+# Ce fichier est lu par scripts/cpanel-install.sh et scripts/cpanel-deploy.sh.
+# Configurez aussi les memes valeurs dans cPanel > Setup Node.js App > Environment variables.
+
+# URL publique du site (sans slash final)
+CPANEL_SITE_URL="https://votre-domaine.com"
+
+# Dossier de la base SQLite hors public_html.
+# Nom simple (relatif a $HOME) ou chemin absolu :
+CPANEL_BLOGDATA_DIR="blogdata"
+
+# Nom du fichier SQLite
+CPANEL_DB_FILENAME="prod.db"

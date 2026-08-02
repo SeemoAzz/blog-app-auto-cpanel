@@ -42,7 +42,9 @@ yarn-error.log*
 next-env.d.ts
 
 # cpanel / production
+cpanel.config
 blogdata/
+blogdata_*/
 
 # database (SQLite)
 /prisma/dev.db

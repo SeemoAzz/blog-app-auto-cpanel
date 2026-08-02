@@ -7,7 +7,9 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=cpanel-common.sh
 source "$SCRIPT_DIR/cpanel-common.sh"
 cpanel_setup_path
+cpanel_load_config
 
+cpanel_ensure_blogdata
 cpanel_ensure_local_node_modules
 
 SCHEMA="$ROOT/prisma/schema.prisma"

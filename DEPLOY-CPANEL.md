@@ -50,20 +50,53 @@ Fichiers deja configures pour cPanel :
 
 ---
 
-## Etape 3 — Creer la base de donnees
+## Etape 3 — Configurer ce projet (cpanel.config)
+
+Chaque instance du blog (blog2, blog3, recettes, sante, etc.) a son propre domaine et sa propre base SQLite.
+
+Dans le **Terminal cPanel**, a la racine du depot :
+
+```bash
+cp cpanel.config.example cpanel.config
+nano cpanel.config   # ou vi
+```
+
+Exemple pour un blog recettes :
+
+```bash
+CPANEL_SITE_URL="https://recettes.arasnews.com"
+CPANEL_BLOGDATA_DIR="blogdata_recipe"
+CPANEL_DB_FILENAME="prod.db"
+```
+
+Exemple pour un blog sante :
+
+```bash
+CPANEL_SITE_URL="https://sante.arasnews.com"
+CPANEL_BLOGDATA_DIR="blogdata_health"
+CPANEL_DB_FILENAME="prod.db"
+```
+
+Le script `cpanel-install.sh` cree automatiquement le dossier (`~/blogdata_recipe`, etc.) et utilise la bonne base pour les migrations.
+
+---
+
+## Etape 4 — Creer la base de donnees
 
 ### Option A — SQLite (simple, ideal pour demarrer)
 
-Dans le **Terminal cPanel** :
+Le dossier est cree par `cpanel-install.sh` a partir de `cpanel.config`.
+Vous pouvez aussi le creer manuellement :
 
 ```bash
-mkdir -p ~/blogdata
-chmod 750 ~/blogdata
+mkdir -p ~/blogdata_recipe
+chmod 750 ~/blogdata_recipe
 ```
 
-Vous utiliserez :
+La valeur `DATABASE_URL` correspondante (generee automatiquement) :
+
 ```
-DATABASE_URL="file:/home/VOTRE_USER/blogdata/prod.db"
+DATABASE_URL="file:/home/VOTRE_USER/blogdata_recipe/prod.db"
 ```
 
 ### Option B — MySQL (recommande pour la production)
@@ -77,7 +110,7 @@ DATABASE_URL="file:/home/VOTRE_USER/blogdata/prod.db"
 
 ---
 
-## Etape 4 — Configurer l'application Node.js
+## Etape 5 — Configurer l'application Node.js
 
 1. cPanel > **Setup Node.js App** (ou **Application Manager**)
 2. Cliquez **Create Application**
@@ -96,9 +129,9 @@ DATABASE_URL="file:/home/VOTRE_USER/blogdata/prod.db"
 | Variable | Valeur |
 |----------|--------|
 | `NODE_ENV` | `production` |
-| `DATABASE_URL` | `file:/home/VOTRE_USER/blogdata/prod.db` (ou URL MySQL) |
+| `DATABASE_URL` | Identique a `cpanel.config` (ex. `file:/home/VOTRE_USER/blogdata_recipe/prod.db`) |
 | `AUTH_SECRET` | une valeur aleatoire de 48+ caracteres |
-| `NEXT_PUBLIC_SITE_URL` | `https://votre-domaine.com` |
+| `NEXT_PUBLIC_SITE_URL` | Identique a `CPANEL_SITE_URL` dans `cpanel.config` |
 | `ADMIN_EMAIL` | email admin |
 | `ADMIN_PASSWORD` | mot de passe admin (pour le seed) |
 
@@ -108,7 +141,7 @@ DATABASE_URL="file:/home/VOTRE_USER/blogdata/prod.db"
 
 ---
 
-## Etape 5 — Premier deploiement
+## Etape 6 — Premier deploiement
 
 Dans le **Terminal cPanel**, utilisez la commande d'activation affichee en haut de **Setup Node.js App**, puis :
 
@@ -128,7 +161,7 @@ Puis dans **Setup Node.js App** : cliquez **Restart** (pas START si deja configu
 
 ---
 
-## Etape 6 — Verifier le site
+## Etape 7 — Verifier le site
 
 - Site public : `https://votre-domaine.com`
 - Admin : `https://votre-domaine.com/admin`
@@ -175,8 +208,10 @@ npm run cpanel:deploy
 │   ├── prisma/
 │   ├── public/uploads/      ← images uploadees (sauvegarder !)
 │   └── .next/               ← genere par npm run build
-├── blogdata/
-│   └── prod.db              ← base SQLite (si option A)
+├── blogdata_recipe/         ← base SQLite blog recettes (exemple)
+│   └── prod.db
+├── blogdata_health/         ← base SQLite blog sante (exemple)
+│   └── prod.db
 └── public_html/             ← gere par le proxy Node.js (ne pas y copier le code)
 ```
 
@@ -217,7 +252,7 @@ Puis **Restart** dans Setup Node.js App.
 
 Causes frequentes :
 - Clic sur **START APP** ou **Run NPM Install** sans lancer le **build** (`npm run build`)
-- Dossier `~/blogdata` inexistant → `mkdir -p ~/blogdata && chmod 750 ~/blogdata`
+- Dossier SQLite inexistant → verifiez `CPANEL_BLOGDATA_DIR` dans `cpanel.config`, puis relancez `cpanel-install.sh`
 - Client Prisma non genere → `npx prisma generate`
 
 ### Erreur 503 / Application ne demarre pas

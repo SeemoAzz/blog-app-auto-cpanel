@@ -1,6 +1,46 @@
 #!/bin/bash
 # Helpers partages par cpanel-install.sh et cpanel-deploy.sh
 
+cpanel_load_config() {
+  local config_file="$ROOT/cpanel.config"
+
+  CPANEL_SITE_URL="${CPANEL_SITE_URL:-}"
+  CPANEL_BLOGDATA_DIR="${CPANEL_BLOGDATA_DIR:-blogdata}"
+  CPANEL_DB_FILENAME="${CPANEL_DB_FILENAME:-prod.db}"
+
+  if [ -f "$config_file" ]; then
+    # shellcheck source=/dev/null
+    source "$config_file"
+  fi
+
+  if [ -z "${CPANEL_SITE_URL:-}" ]; then
+    echo "ERREUR: CPANEL_SITE_URL manquant."
+    echo "       Copiez cpanel.config.example vers cpanel.config et renseignez l'URL du site."
+    exit 1
+  fi
+
+  if [[ "$CPANEL_BLOGDATA_DIR" == /* ]]; then
+    CPANEL_BLOGDATA_PATH="$CPANEL_BLOGDATA_DIR"
+  else
+    CPANEL_BLOGDATA_PATH="$HOME/$CPANEL_BLOGDATA_DIR"
+  fi
+
+  CPANEL_DATABASE_URL="file:${CPANEL_BLOGDATA_PATH}/${CPANEL_DB_FILENAME}"
+
+  if [ -n "${DATABASE_URL:-}" ] && [ "$DATABASE_URL" != "$CPANEL_DATABASE_URL" ]; then
+    echo "==> ATTENTION: DATABASE_URL cPanel ($DATABASE_URL)"
+    echo "              differe de cpanel.config ($CPANEL_DATABASE_URL)"
+    echo "              Utilisation de cpanel.config pour ce script."
+  fi
+
+  export DATABASE_URL="$CPANEL_DATABASE_URL"
+}
+
+cpanel_ensure_blogdata() {
+  mkdir -p "$CPANEL_BLOGDATA_PATH"
+  chmod 750 "$CPANEL_BLOGDATA_PATH"
+}
+
 cpanel_setup_path() {
   ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
   cd "$ROOT"
