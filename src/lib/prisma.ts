@@ -10,6 +10,6 @@ export const prisma =
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+// Toujours reutiliser la meme instance (build Next.js + serveur Node cPanel).
+// Sans cela, chaque import cree un moteur Prisma/tokio supplementaire → EAGAIN.
+globalForPrisma.prisma = prisma;

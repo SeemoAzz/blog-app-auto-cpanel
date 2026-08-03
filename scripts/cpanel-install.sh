@@ -42,7 +42,7 @@ echo "==> Seed admin..."
 node "$TSX" prisma/seed.ts || echo "(seed deja fait)"
 
 echo "==> Build Next.js (webpack, 1 worker — limite cPanel)..."
-NODE_ENV=production NODE_OPTIONS="--max-old-space-size=512" npm run build
+cpanel_run_build
 
 echo ""
 echo "==> OK ! cPanel > Setup Node.js App > RESTART"

@@ -303,6 +303,29 @@ bash scripts/cpanel-install.sh
 
 Puis **Restart** dans Setup Node.js App.
 
+### Erreur `tokio` / Prisma pendant « Collecting page data »
+
+```
+OS can't spawn worker thread: Resource temporarily unavailable (os error 11)
+⨯ Next.js build worker exited with code: null and signal: SIGABRT
+```
+
+**Cause** : pendant le build, Next.js charge plusieurs pages qui importent Prisma. Sans singleton global, chaque import demarre un moteur Rust/tokio supplementaire et depasse la limite LVE cPanel.
+
+**Correction** (deja dans le depot) : instance Prisma unique dans `src/lib/prisma.ts` + variables `UV_THREADPOOL_SIZE=1` et `TOKIO_WORKER_THREADS=1` dans `scripts/cpanel-install.sh`.
+
+Apres `git pull` :
+
+```bash
+source /home/araszfcr/nodevenv/blog3/blog-app-auto-cpanel/20/bin/activate
+cd /home/araszfcr/blog3/blog-app-auto-cpanel
+git pull
+rm -rf node_modules .next
+bash scripts/cpanel-install.sh
+```
+
+Si l'erreur persiste, verifiez la limite : `ulimit -u`. Contactez Namecheap pour augmenter le plafond de processus LVE, ou builder en local et copier le dossier `.next` sur le serveur.
+
 ### HTTPS
 
 Activez **SSL/TLS** dans cPanel (Let's Encrypt gratuit) pour votre domaine.

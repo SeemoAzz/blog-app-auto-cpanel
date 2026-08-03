@@ -93,3 +93,12 @@ cpanel_prisma() {
   shift
   "$ROOT/node_modules/.bin/prisma" "$@" --schema="$schema"
 }
+
+# Build Next.js avec limites de threads/proc pour hebergement mutualise (CloudLinux).
+cpanel_run_build() {
+  export NODE_ENV=production
+  export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=512}"
+  export UV_THREADPOOL_SIZE=1
+  export TOKIO_WORKER_THREADS=1
+  npm run build
+}

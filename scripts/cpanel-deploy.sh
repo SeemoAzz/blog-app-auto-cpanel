@@ -23,7 +23,7 @@ echo "==> Application des migrations..."
 cpanel_prisma "$SCHEMA" migrate deploy
 
 echo "==> Build Next.js (webpack, 1 worker)..."
-NODE_ENV=production NODE_OPTIONS="--max-old-space-size=512" npm run build
+cpanel_run_build
 
 mkdir -p public/uploads
 
