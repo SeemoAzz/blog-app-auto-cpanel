@@ -280,6 +280,29 @@ Sur certains hebergements mutualises, le build peut manquer de RAM. Solutions :
 - Passer a un VPS Namecheap
 - Utiliser SSH avec : `NODE_OPTIONS="--max-old-space-size=512" npm run build`
 
+### Erreur `EAGAIN` pendant le build (Tailwind / worker threads)
+
+Sur hebergement mutualise (CloudLinux / cPanel), la limite de processus/threads (LVE) peut provoquer :
+
+```
+Error: EAGAIN at new Worker (node:internal/worker:...)
+@tailwindcss/node/dist/index.js
+```
+
+**Cause** : Tailwind CSS v4 (`@tailwindcss/postcss`) utilise `Module.register()` qui cree des worker threads. Next.js est deja limite a 1 worker (`next.config.ts`), mais Tailwind en lance en plus.
+
+**Ce projet** : Tailwind n'est plus utilise au build (styles en CSS custom dans `globals.css` / `admin.css`). Si vous voyez encore cette erreur apres `git pull`, relancez :
+
+```bash
+source /home/araszfcr/nodevenv/blog3/blog-app-auto-cpanel/20/bin/activate
+cd /home/araszfcr/blog3/blog-app-auto-cpanel
+git pull
+rm -rf node_modules .next
+bash scripts/cpanel-install.sh
+```
+
+Puis **Restart** dans Setup Node.js App.
+
 ### HTTPS
 
 Activez **SSL/TLS** dans cPanel (Let's Encrypt gratuit) pour votre domaine.
