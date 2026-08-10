@@ -100,5 +100,6 @@ cpanel_run_build() {
   export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=512}"
   export UV_THREADPOOL_SIZE=1
   export TOKIO_WORKER_THREADS=1
-  npm run build
+  export RAYON_NUM_THREADS=1
+  node "$ROOT/scripts/run-build.mjs"
 }

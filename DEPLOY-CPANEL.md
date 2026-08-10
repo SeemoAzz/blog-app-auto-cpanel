@@ -310,21 +310,33 @@ OS can't spawn worker thread: Resource temporarily unavailable (os error 11)
 ⨯ Next.js build worker exited with code: null and signal: SIGABRT
 ```
 
-**Cause** : pendant le build, Next.js charge plusieurs pages qui importent Prisma. Sans singleton global, chaque import demarre un moteur Rust/tokio supplementaire et depasse la limite LVE cPanel.
+**Cause** : limite de processus/threads LVE sur cPanel pendant `next build` (surtout l'etape « Generating static pages »). Lancer `npm run build` seul, sans les variables d'environnement, aggrave le probleme.
 
-**Correction** (deja dans le depot) : instance Prisma unique dans `src/lib/prisma.ts` + variables `UV_THREADPOOL_SIZE=1` et `TOKIO_WORKER_THREADS=1` dans `scripts/cpanel-install.sh`.
+**Correction** (deja dans le depot) :
 
-Apres `git pull` :
+1. Build en **mode compile** via `scripts/run-build.mjs` (toutes les pages sont dynamiques).
+2. Singleton Prisma dans `src/lib/prisma.ts`.
+3. Variables `UV_THREADPOOL_SIZE=1`, `TOKIO_WORKER_THREADS=1`, `RAYON_NUM_THREADS=1`.
+
+Apres `git pull`, **ne pas** lancer `npm run build` seul — utilisez :
 
 ```bash
-source /home/araszfcr/nodevenv/blog3/blog-app-auto-cpanel/20/bin/activate
-cd /home/araszfcr/blog3/blog-app-auto-cpanel
-git pull
-rm -rf node_modules .next
-bash scripts/cpanel-install.sh
+source /home/araszfcr/nodevenv/blog2/blog-app-auto-cpanel/20/bin/activate
+cd /home/araszfcr/blog2/blog-app-auto-cpanel
+git pull origin master
+rm -rf .next
+bash scripts/cpanel-deploy.sh
 ```
 
-Si l'erreur persiste, verifiez la limite : `ulimit -u`. Contactez Namecheap pour augmenter le plafond de processus LVE, ou builder en local et copier le dossier `.next` sur le serveur.
+Ou au minimum :
+
+```bash
+npm run cpanel:deploy
+```
+
+Puis **Restart** dans Setup Node.js App.
+
+Si l'erreur persiste : builder en local (`npm run build`) et copier le dossier `.next` sur le serveur, ou contacter Namecheap pour augmenter le plafond LVE (`ulimit -u`).
 
 ### HTTPS
 
