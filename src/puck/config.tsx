@@ -6,6 +6,7 @@ import { ARTICLES_CARD_STYLE_OPTIONS } from "@/lib/articles-page-config";
 import type { ArticlesCardStyle, ArticlesLayout } from "@/lib/articles-page-config";
 import { MediaField } from "./MediaField";
 import { CategorySelectField } from "./CategorySelectField";
+import { RichTextField } from "./RichTextField";
 import { getHero, HERO_OPTIONS } from "@/theme/heroes";
 
 export type ArticleCardData = {
@@ -171,9 +172,15 @@ export const config: Config = {
     },
 
     RichText: {
-      label: "Texte enrichi (HTML)",
+      label: "Texte enrichi",
       fields: {
-        html: { type: "textarea", label: "Contenu HTML" },
+        html: {
+          type: "custom" as const,
+          label: "Contenu",
+          render: ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+            <RichTextField value={value || ""} onChange={onChange} />
+          ),
+        },
         align: { type: "radio", label: "Alignement", options: ALIGN_OPTIONS },
         maxWidth: {
           type: "select",
