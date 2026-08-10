@@ -71,13 +71,44 @@ cpanel_ensure_local_node_modules() {
   fi
 }
 
-cpanel_npm_install() {
-  echo "==> Installation npm (node_modules local)..."
-  echo "    Sur hebergement mutualise : 5 a 30 min sans autre ligne est normal."
-  echo "    Verifiez l'activite : ps aux | grep npm   (autre session SSH)"
+cpanel_prepare_lve() {
+  export UV_THREADPOOL_SIZE=1
+  export TOKIO_WORKER_THREADS=1
+  export RAYON_NUM_THREADS=1
+  export npm_config_maxsockets=1
+  export npm_config_fetch_retries=10
+  export npm_config_fetch_retry_mintimeout=30000
+}
 
-  local npm_flags=(--include=dev --no-audit --no-fund --loglevel=info)
-  local start_ts elapsed
+cpanel_warn_lve() {
+  echo "==> CloudLinux LVE (limite de processus)"
+  echo "    AVANT npm : cPanel > Setup Node.js App > STOP sur TOUTES vos apps Node.js"
+  echo "    Sinon : fork: Resource temporarily unavailable"
+  if command -v ulimit >/dev/null 2>&1; then
+    echo "    ulimit processus (-u): $(ulimit -u 2>/dev/null || echo '?')"
+  fi
+  if command -v ps >/dev/null 2>&1; then
+    echo "    Processus actifs ($(whoami)): $(ps -u "$(whoami)" 2>/dev/null | wc -l | tr -d ' ')"
+  fi
+}
+
+cpanel_npm_install() {
+  cpanel_prepare_lve
+  cpanel_warn_lve
+
+  echo "==> Installation npm (node_modules local)..."
+  echo "    npm ci --ignore-scripts : moins de forks (postinstalls apres)"
+  echo "    Duree typique : 5 a 30 min sur hebergement mutualise."
+
+  local npm_flags=(
+    --include=dev
+    --no-audit
+    --no-fund
+    --loglevel=info
+    --maxsockets=1
+    --ignore-scripts
+  )
+  local start_ts elapsed attempt
 
   _cpanel_run_npm() {
     if [ -f package-lock.json ]; then
@@ -90,15 +121,35 @@ cpanel_npm_install() {
   }
 
   start_ts=$(date +%s)
-  _cpanel_run_npm
+  attempt=1
+  while [ "$attempt" -le 3 ]; do
+    if _cpanel_run_npm; then
+      break
+    fi
+    if [ "$attempt" -ge 3 ]; then
+      echo ""
+      echo "ERREUR: npm a echoue apres 3 tentatives."
+      echo "       1. STOP toutes les apps Node.js dans cPanel"
+      echo "       2. Attendre 1 min, puis : ps -u \$(whoami) | wc -l"
+      echo "       3. Relancer : npm run cpanel:deploy"
+      echo "       Si fork persiste : builder en local et copier node_modules + .next"
+      exit 1
+    fi
+    echo "==> npm echoue (tentative $attempt/3) — STOP les apps Node.js, attente 45s..."
+    sleep 45
+    attempt=$((attempt + 1))
+  done
   elapsed=$(( $(date +%s) - start_ts ))
   echo "==> npm termine en ${elapsed}s"
 
   if [ ! -x "node_modules/.bin/prisma" ]; then
-    echo "==> Prisma CLI toujours absent — nouvelle tentative..."
+    echo "==> Prisma CLI absent — nouvelle tentative..."
     rm -rf node_modules
     start_ts=$(date +%s)
-    _cpanel_run_npm --no-cache
+    _cpanel_run_npm --no-cache || {
+      echo "ERREUR: npm ci impossible (limite LVE). Arretez les apps Node.js et reessayez."
+      exit 1
+    }
     elapsed=$(( $(date +%s) - start_ts ))
     echo "==> npm (retry) termine en ${elapsed}s"
   fi

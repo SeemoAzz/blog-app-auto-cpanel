@@ -219,6 +219,35 @@ npm run cpanel:deploy
 
 ## Depannage
 
+### Erreur `fork: Resource temporarily unavailable` (npm / CloudLinux LVE)
+
+**Cause** : limite de processus atteinte sur hebergement mutualise (CloudLinux). Chaque app Node.js (blog2, blog3, etc.) consomme des processus ; npm en lance encore plus.
+
+**Solution (dans l'ordre)** :
+
+1. **cPanel > Setup Node.js App** → cliquez **STOP** sur **toutes** vos applications Node.js (pas seulement blog2).
+2. Attendez **1 minute**.
+3. Verifiez le nombre de processus :
+   ```bash
+   ps -u $(whoami) | wc -l
+   ulimit -u
+   ```
+4. Relancez le deploiement :
+   ```bash
+   source /home/araszfcr/nodevenv/blog2/blog-app-auto-cpanel/20/bin/activate
+   cd /home/araszfcr/blog2/blog-app-auto-cpanel
+   git pull origin master
+   npm run cpanel:deploy
+   ```
+5. Quand le script affiche « Deploiement termine », retournez dans cPanel et cliquez **RESTART** sur l'app.
+
+Le script utilise desormais `npm ci --ignore-scripts --maxsockets=1` pour limiter les forks pendant l'installation.
+
+Si l'erreur persiste meme avec toutes les apps STOP :
+- Ne deployez qu'**un blog a la fois**
+- Contactez Namecheap pour augmenter le plafond LVE (`nproc`)
+- Alternative : builder en local (`npm ci && npm run build`) puis copier `node_modules` et `.next` sur le serveur via SFTP
+
 ### `npm install` semble bloque (« Installation npm... » sans suite)
 
 Apres suppression du symlink `node_modules` (nodevenv), la reinstallation complete peut prendre **5 a 30 minutes** sur hebergement mutualise. npm affiche peu de lignes au debut (telechargement de Next.js, Prisma, Sharp, etc.).
