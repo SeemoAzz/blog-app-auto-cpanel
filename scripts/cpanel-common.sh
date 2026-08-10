@@ -73,12 +73,34 @@ cpanel_ensure_local_node_modules() {
 
 cpanel_npm_install() {
   echo "==> Installation npm (node_modules local)..."
-  NODE_ENV=development npm install --include=dev
+  echo "    Sur hebergement mutualise : 5 a 30 min sans autre ligne est normal."
+  echo "    Verifiez l'activite : ps aux | grep npm   (autre session SSH)"
+
+  local npm_flags=(--include=dev --no-audit --no-fund --loglevel=info)
+  local start_ts elapsed
+
+  _cpanel_run_npm() {
+    if [ -f package-lock.json ]; then
+      echo "    Mode: npm ci (package-lock.json)"
+      NODE_ENV=development npm ci "${npm_flags[@]}" "$@"
+    else
+      echo "    Mode: npm install"
+      NODE_ENV=development npm install "${npm_flags[@]}" "$@"
+    fi
+  }
+
+  start_ts=$(date +%s)
+  _cpanel_run_npm
+  elapsed=$(( $(date +%s) - start_ts ))
+  echo "==> npm termine en ${elapsed}s"
 
   if [ ! -x "node_modules/.bin/prisma" ]; then
     echo "==> Prisma CLI toujours absent — nouvelle tentative..."
     rm -rf node_modules
-    NODE_ENV=development npm install --include=dev --no-cache
+    start_ts=$(date +%s)
+    _cpanel_run_npm --no-cache
+    elapsed=$(( $(date +%s) - start_ts ))
+    echo "==> npm (retry) termine en ${elapsed}s"
   fi
 
   if [ ! -x "node_modules/.bin/prisma" ]; then

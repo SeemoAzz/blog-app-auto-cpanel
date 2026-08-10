@@ -219,6 +219,36 @@ npm run cpanel:deploy
 
 ## Depannage
 
+### `npm install` semble bloque (« Installation npm... » sans suite)
+
+Apres suppression du symlink `node_modules` (nodevenv), la reinstallation complete peut prendre **5 a 30 minutes** sur hebergement mutualise. npm affiche peu de lignes au debut (telechargement de Next.js, Prisma, Sharp, etc.).
+
+**Verifiez que npm tourne encore** (ouvrez une 2e session SSH) :
+
+```bash
+ps aux | grep -E 'npm|node' | grep -v grep
+```
+
+Si un processus `npm` est present, **attendez** — ce n'est pas bloque.
+
+Si **aucun** processus npm apres 2-3 minutes, relancez manuellement avec logs :
+
+```bash
+source /home/araszfcr/nodevenv/blog2/blog-app-auto-cpanel/20/bin/activate
+cd /home/araszfcr/blog2/blog-app-auto-cpanel
+
+rm -rf node_modules
+NODE_ENV=development npm ci --include=dev --no-audit --no-fund --loglevel=verbose
+ls node_modules/.bin/prisma   # doit exister
+
+npm run cpanel:deploy
+```
+
+Causes frequentes d'un vrai blocage :
+- Limite memoire LVE (processus tue silencieusement) → contactez Namecheap ou builder en local
+- Reseau lent vers registry.npmjs.org → reessayez plus tard
+- Clic sur **Run NPM Install** dans cPanel pendant le script → attendez la fin ou tuez les npm en double
+
 ### Erreur `node_modules/.bin/prisma: No such file or directory`
 
 cPanel cree souvent un `node_modules` incomplet (symlink nodevenv ou **Run NPM Install** sans devDependencies). `npm install` peut alors afficher *up to date* sans installer Prisma.
