@@ -80,6 +80,7 @@ export const DEFAULT_SETTINGS: AllSettings = {
   },
   nav: [
     { label: "Accueil", href: "/" },
+    { label: "Articles", href: "/articles" },
     { label: "A propos", href: "/a-propos" },
     { label: "Contact", href: "/contact" },
   ],

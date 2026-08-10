@@ -305,3 +305,77 @@ a {
     font-size: 1.15rem;
   }
 }
+
+/* Page articles — listes et barres laterales */
+.articles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.articles-layout-sidebar {
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+}
+
+.articles-layout-sidebar-reverse {
+  flex-direction: row-reverse;
+}
+
+.articles-sidebar {
+  width: 260px;
+  flex-shrink: 0;
+}
+
+.articles-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.articles-filters-sidebar {
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .articles-layout-sidebar,
+  .articles-layout-sidebar-reverse {
+    flex-direction: column;
+  }
+
+  .articles-sidebar {
+    width: 100%;
+  }
+
+  .articles-editor-layout {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.article-meta {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 20px 0;
+  color: var(--color-muted);
+  font-size: 14px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.article-body {
+  display: block;
+}
+
+.article-paginated-reader {
+  display: block;
+}
+
+.article-part-content {
+  display: block;
+}
+
+/* Navigation parties — uniquement en bas du contenu */
+.article-part-nav-bottom {
+  display: block;
+}

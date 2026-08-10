@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { splitArticleByParts } from "@/lib/article-parts";
 import { getSetting } from "@/lib/settings";
 import { PublicRender } from "@/components/PublicRender";
+import { ArticlePaginatedReader } from "@/components/site/ArticlePaginatedReader";
 
 export const dynamic = "force-dynamic";
 
@@ -53,9 +55,11 @@ export default async function ArticlePage({
   const article = await getArticle(slug);
   if (!article) notFound();
 
-  const [site] = await Promise.all([getSetting("site")]);
+  const [site, adsense] = await Promise.all([getSetting("site"), getSetting("adsense")]);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
   const image = article.ogImage || article.cover?.url || undefined;
+  const { parts, breaks } = splitArticleByParts(article.puckData);
+  const adsenseClientId = adsense.enabled ? adsense.clientId : "";
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -73,24 +77,28 @@ export default async function ArticlePage({
     },
   };
 
+  const content =
+    parts.length <= 1 ? (
+      <PublicRender puckData={article.puckData} />
+    ) : (
+      <ArticlePaginatedReader
+        breaks={breaks}
+        adsenseClientId={adsenseClientId}
+        totalParts={parts.length}
+      >
+        {parts.map((part, i) => (
+          <PublicRender key={i} puckData={JSON.stringify(part)} />
+        ))}
+      </ArticlePaginatedReader>
+    );
+
   return (
     <article>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <div
-        style={{
-          maxWidth: 720,
-          margin: "0 auto",
-          padding: "32px 20px 0",
-          color: "var(--color-muted)",
-          fontSize: 14,
-          display: "flex",
-          gap: 12,
-          flexWrap: "wrap",
-        }}
-      >
+      <div className="article-meta">
         {article.category && (
           <span
             style={{
@@ -114,7 +122,7 @@ export default async function ArticlePage({
         )}
       </div>
 
-      <PublicRender puckData={article.puckData} />
+      <div className="article-body">{content}</div>
     </article>
   );
 }

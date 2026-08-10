@@ -1,5 +1,9 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import {
+  DEFAULT_ARTICLES_PAGE_CONFIG,
+  serializeArticlesPageConfig,
+} from "../src/lib/articles-page-config";
 
 const prisma = new PrismaClient();
 
@@ -41,6 +45,7 @@ async function main() {
     adsense: { enabled: false, clientId: "", autoAds: false, adsTxtContent: "" },
     nav: [
       { label: "Accueil", href: "/" },
+      { label: "Articles", href: "/articles" },
       { label: "A propos", href: "/a-propos" },
       { label: "Contact", href: "/contact" },
     ],
@@ -117,6 +122,25 @@ async function main() {
     update: {},
   });
 
+  // Page liste des articles (configuration visuelle)
+  const articlesTitle = DEFAULT_ARTICLES_PAGE_CONFIG.title;
+
+  await prisma.page.upsert({
+    where: { path: "/articles" },
+    create: {
+      path: "/articles",
+      title: articlesTitle,
+      status: "published",
+      showInNav: true,
+      navOrder: 1,
+      puckData: serializeArticlesPageConfig(DEFAULT_ARTICLES_PAGE_CONFIG),
+      metaTitle: `${articlesTitle} - Mon Blog`,
+      metaDescription:
+        "Parcourez tous les articles du blog avec recherche et filtres par categorie.",
+    },
+    update: {},
+  });
+
   // Pages legales / requises AdSense
   const legalPages: {
     path: string;
@@ -129,14 +153,14 @@ async function main() {
       path: "/a-propos",
       title: "A propos",
       nav: true,
-      order: 1,
+      order: 2,
       html: "<h1>A propos</h1><p>Presentez ici votre blog, votre equipe et votre mission editoriale. Un contenu 'A propos' clair et authentique est important pour l'acceptation Google AdSense.</p>",
     },
     {
       path: "/contact",
       title: "Contact",
       nav: true,
-      order: 2,
+      order: 3,
       html: "<h1>Contact</h1><p>Indiquez ici comment vous joindre: adresse e-mail, formulaire, reseaux sociaux. Une page de contact est requise par AdSense.</p>",
     },
     {

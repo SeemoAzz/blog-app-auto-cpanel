@@ -15,6 +15,7 @@ import {
   type SaveArticleInput,
   type SavePageInput,
 } from "@/app/admin/content-actions";
+import { ARTICLES_PAGE_PATH } from "@/lib/articles-page";
 
 export type EditorMeta = {
   id?: string;
@@ -304,7 +305,7 @@ function SettingsModal({
                 className="admin-input"
                 placeholder="/a-propos"
                 value={meta.path || ""}
-                disabled={meta.isHome}
+                disabled={meta.isHome || meta.path === ARTICLES_PAGE_PATH}
                 onChange={(e) => onChange({ path: e.target.value })}
               />
             </div>
@@ -313,6 +314,7 @@ function SettingsModal({
                 <input
                   type="checkbox"
                   checked={!!meta.isHome}
+                  disabled={meta.path === ARTICLES_PAGE_PATH}
                   onChange={(e) => onChange({ isHome: e.target.checked })}
                 />
                 <span>Definir comme page d&apos;accueil</span>

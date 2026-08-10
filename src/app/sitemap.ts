@@ -17,6 +17,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }),
   ]);
 
+  const staticEntries: MetadataRoute.Sitemap = [
+    {
+      url: `${base}/articles`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.9,
+    },
+  ];
+
   const pageEntries: MetadataRoute.Sitemap = pages.map((p) => ({
     url: `${base}${p.path === "/" ? "" : p.path}`,
     lastModified: p.updatedAt,
@@ -31,5 +40,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  return [...pageEntries, ...articleEntries];
+  return [...staticEntries, ...pageEntries, ...articleEntries];
 }

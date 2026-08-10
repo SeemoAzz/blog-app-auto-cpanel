@@ -1,9 +1,12 @@
 import { notFound } from "next/navigation";
 import type { Data } from "@puckeditor/core";
 import { prisma } from "@/lib/prisma";
+import { isArticlesPage } from "@/lib/articles-page";
+import { parseArticlesPageConfig } from "@/lib/articles-page-config";
 import { getSetting } from "@/lib/settings";
-import { getArticleCards } from "@/lib/public-data";
+import { getArticleCards, getPublicCategories } from "@/lib/public-data";
 import { emptyData } from "@/puck/config";
+import { ArticlesPageEditor } from "@/components/admin/ArticlesPageEditor";
 import { ContentEditor } from "@/components/editor/ContentEditor";
 
 export const dynamic = "force-dynamic";
@@ -22,13 +25,38 @@ export default async function EditPagePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [page, adsense, previewArticles] = await Promise.all([
-    prisma.page.findUnique({ where: { id } }),
+  const page = await prisma.page.findUnique({ where: { id } });
+
+  if (!page) notFound();
+
+  if (isArticlesPage(page)) {
+    const [previewArticles, categories] = await Promise.all([
+      getArticleCards(6),
+      getPublicCategories(),
+    ]);
+
+    return (
+      <ArticlesPageEditor
+        initialConfig={parseArticlesPageConfig(page.puckData)}
+        initialMeta={{
+          id: page.id,
+          title: page.title,
+          status: page.status as "draft" | "published",
+          showInNav: page.showInNav,
+          navOrder: page.navOrder,
+          metaTitle: page.metaTitle || "",
+          metaDescription: page.metaDescription || "",
+        }}
+        previewArticles={previewArticles}
+        categories={categories}
+      />
+    );
+  }
+
+  const [adsense, previewArticles] = await Promise.all([
     getSetting("adsense"),
     getArticleCards(),
   ]);
-
-  if (!page) notFound();
 
   return (
     <ContentEditor

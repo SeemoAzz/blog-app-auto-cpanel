@@ -2,6 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import slugify from "slugify";
+import { ARTICLES_PAGE_PATH } from "@/lib/articles-page";
+import {
+  type ArticlesPageConfig,
+  serializeArticlesPageConfig,
+} from "@/lib/articles-page-config";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 
@@ -127,8 +132,15 @@ export async function savePage(input: SavePageInput) {
 
   const title = input.title?.trim() || "Sans titre";
   let basePath: string;
+
+  const existingPage = input.id
+    ? await prisma.page.findUnique({ where: { id: input.id } })
+    : null;
+
   if (input.isHome) {
     basePath = "/";
+  } else if (existingPage?.path === ARTICLES_PAGE_PATH) {
+    basePath = ARTICLES_PAGE_PATH;
   } else {
     const raw = (input.path || title).trim();
     const cleaned = raw.startsWith("/") ? raw.slice(1) : raw;
@@ -168,12 +180,56 @@ export async function savePage(input: SavePageInput) {
 
   revalidatePath("/");
   revalidatePath(page.path);
+  revalidatePath("/articles");
   return { ok: true as const, id: page.id, path: page.path };
+}
+
+export type SaveArticlesPageInput = {
+  id: string;
+  title: string;
+  status: "draft" | "published";
+  showInNav: boolean;
+  navOrder: number;
+  metaTitle?: string;
+  metaDescription?: string;
+  config: ArticlesPageConfig;
+};
+
+export async function saveArticlesPage(input: SaveArticlesPageInput) {
+  await requireAuth();
+
+  const page = await prisma.page.findUnique({ where: { id: input.id } });
+  if (!page || page.path !== ARTICLES_PAGE_PATH) {
+    throw new Error("Page articles introuvable");
+  }
+
+  const title = input.title?.trim() || input.config.title?.trim() || "Tous les articles";
+  const config = { ...input.config, title: input.config.title?.trim() || title };
+
+  await prisma.page.update({
+    where: { id: input.id },
+    data: {
+      title,
+      status: input.status,
+      showInNav: input.showInNav,
+      navOrder: input.navOrder,
+      metaTitle: input.metaTitle || null,
+      metaDescription: input.metaDescription || null,
+      puckData: serializeArticlesPageConfig(config),
+    },
+  });
+
+  revalidatePath("/articles");
+  revalidatePath("/admin/pages");
+  return { ok: true as const };
 }
 
 export async function deletePage(id: string) {
   await requireAuth();
   const page = await prisma.page.findUnique({ where: { id } });
+  if (page?.isHome || page?.path === ARTICLES_PAGE_PATH) {
+    throw new Error("Cette page ne peut pas etre supprimee");
+  }
   await prisma.page.delete({ where: { id } });
   revalidatePath("/");
   if (page) revalidatePath(page.path);

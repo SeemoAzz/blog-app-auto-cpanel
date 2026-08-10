@@ -1,7 +1,11 @@
 import type { Config, Data } from "@puckeditor/core";
 import Link from "next/link";
 import { AdSlot } from "@/components/AdSlot";
+import { ArticleCard } from "@/components/site/ArticleCard";
+import { ARTICLES_CARD_STYLE_OPTIONS } from "@/lib/articles-page-config";
+import type { ArticlesCardStyle, ArticlesLayout } from "@/lib/articles-page-config";
 import { MediaField } from "./MediaField";
+import { CategorySelectField } from "./CategorySelectField";
 import { getHero, HERO_OPTIONS } from "@/theme/heroes";
 
 export type ArticleCardData = {
@@ -80,6 +84,10 @@ export const config: Config = {
     Dynamique: {
       title: "Dynamique",
       components: ["ArticleList", "AdSlot", "HtmlEmbed"],
+    },
+    Article: {
+      title: "Article (pagination)",
+      components: ["ArticlePartBreak"],
     },
   },
   root: {
@@ -325,6 +333,83 @@ export const config: Config = {
       },
     },
 
+    ArticlePartBreak: {
+      label: "Fin de partie (pagination)",
+      fields: {
+        nextButtonLabel: { type: "text", label: "Texte du bouton Suivant" },
+        prevButtonLabel: { type: "text", label: "Texte du bouton Retour" },
+        showAdBeforeNext: {
+          type: "select",
+          label: "Publicite avant la partie suivante",
+          options: [
+            { label: "Oui — afficher une pub a fermer", value: "yes" },
+            { label: "Non — passage direct", value: "no" },
+          ],
+        },
+        adFormat: {
+          type: "select",
+          label: "Format de la pub interstitielle",
+          options: [
+            { label: "Auto (responsive)", value: "auto" },
+            { label: "Horizontal (banniere)", value: "horizontal" },
+            { label: "Rectangle", value: "rectangle" },
+            { label: "Vertical", value: "vertical" },
+          ],
+        },
+        adSlotId: { type: "text", label: "ID emplacement pub (data-ad-slot)" },
+        adLabel: { type: "text", label: "Etiquette pub interstitielle" },
+      },
+      defaultProps: {
+        nextButtonLabel: "Partie suivante",
+        prevButtonLabel: "Partie precedente",
+        showAdBeforeNext: "yes",
+        adFormat: "rectangle",
+        adSlotId: "",
+        adLabel: "Publicite",
+      },
+      render: ({ nextButtonLabel, prevButtonLabel, showAdBeforeNext, adFormat, puck }) => {
+        if (!puck?.isEditing) return <></>;
+        const withAd = showAdBeforeNext !== "no";
+
+        return (
+          <div
+            style={{
+              maxWidth: 720,
+              margin: "24px auto",
+              padding: "20px",
+              border: "2px dashed var(--color-primary)",
+              borderRadius: "calc(var(--radius) + 4px)",
+              background: "color-mix(in srgb, var(--color-primary) 6%, transparent)",
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: "var(--color-primary)",
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+                marginBottom: 8,
+              }}
+            >
+              Fin de partie — pagination
+            </div>
+            <p style={{ margin: "0 0 6px", color: "var(--color-heading)", fontWeight: 600 }}>
+              Suivant : &laquo; {nextButtonLabel || "Partie suivante"} &raquo;
+              {" · "}
+              Retour : &laquo; {prevButtonLabel || "Partie precedente"} &raquo;
+            </p>
+            <p style={{ margin: 0, fontSize: 14, color: "var(--color-muted)" }}>
+              {withAd
+                ? `Pub interstitielle (${adFormat}) affichee avant la suite — le lecteur doit la fermer.`
+                : "Passage direct a la partie suivante, sans pub."}
+            </p>
+          </div>
+        );
+      },
+    },
+
     Section: {
       label: "Section (conteneur)",
       fields: {
@@ -428,14 +513,38 @@ export const config: Config = {
             { label: "4", value: 4 },
           ],
         },
-        category: { type: "text", label: "Slug de categorie (vide = toutes)" },
+        cardStyle: {
+          type: "select",
+          label: "Style des cartes",
+          options: ARTICLES_CARD_STYLE_OPTIONS.map((o) => ({
+            label: o.label,
+            value: o.value,
+          })),
+        },
+        category: {
+          type: "custom",
+          label: "Categorie",
+          render: ({ value, onChange }) => (
+            <CategorySelectField value={value || ""} onChange={onChange} />
+          ),
+        },
       },
-      defaultProps: { title: "Derniers articles", limit: 6, columns: 3, category: "" },
-      render: ({ title, limit, columns, category, puck }) => {
+      defaultProps: {
+        title: "Derniers articles",
+        limit: 6,
+        columns: 3,
+        cardStyle: "classic",
+        category: "",
+      },
+      render: ({ title, limit, columns, cardStyle, category, puck }) => {
         const meta = (puck?.metadata || {}) as PuckMeta;
         const all = meta.articles || [];
         const filtered = category ? all.filter((a) => a.categorySlug === category) : all;
         const items = filtered.slice(0, limit || 6);
+        const layout: ArticlesLayout =
+          columns === 2 ? "grid-2" : columns === 4 ? "grid-4" : "grid-3";
+        const style = (cardStyle || "classic") as ArticlesCardStyle;
+
         return (
           <section id="articles" style={{ maxWidth: 1120, margin: "0 auto", padding: "40px 20px" }}>
             {title && (
@@ -446,33 +555,20 @@ export const config: Config = {
             {items.length === 0 ? (
               <p style={{ color: "var(--color-muted)" }}>
                 {puck?.isEditing
-                  ? "Les articles publies apparaitront ici sur le site."
+                  ? category
+                    ? "Aucun article publie dans cette categorie."
+                    : "Les articles publies apparaitront ici sur le site."
                   : "Aucun article pour le moment."}
               </p>
             ) : (
               <div className={`site-grid site-grid-${columns || 3}`} style={{ gap: 20 }}>
                 {items.map((a) => (
-                  <Link
+                  <ArticleCard
                     key={a.slug}
-                    href={`/article/${a.slug}`}
-                    style={{ textDecoration: "none", color: "inherit", background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "calc(var(--radius) + 4px)", overflow: "hidden", display: "block" }}
-                  >
-                    {a.cover ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={a.cover} alt={a.title} style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} />
-                    ) : (
-                      <div style={{ width: "100%", height: 160, background: "linear-gradient(135deg, var(--color-primary), var(--color-accent))" }} />
-                    )}
-                    <div style={{ padding: 16 }}>
-                      {a.categoryName && (
-                        <span style={{ fontSize: 12, fontWeight: 700, color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                          {a.categoryName}
-                        </span>
-                      )}
-                      <h3 style={{ fontFamily: "var(--font-heading)", color: "var(--color-heading)", fontSize: 18, fontWeight: 700, margin: "6px 0" }}>{a.title}</h3>
-                      {a.excerpt && <p style={{ color: "var(--color-muted)", fontSize: 14, lineHeight: 1.5 }}>{a.excerpt}</p>}
-                    </div>
-                  </Link>
+                    article={a}
+                    cardStyle={style}
+                    layout={layout}
+                  />
                 ))}
               </div>
             )}
