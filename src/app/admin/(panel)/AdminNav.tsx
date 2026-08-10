@@ -16,7 +16,10 @@ const NAV: { group: string; items: { href: string; label: string }[] }[] = [
   },
   {
     group: "Creation IA",
-    items: [{ href: "/admin/ia", label: "Generateur IA" }],
+    items: [
+      { href: "/admin/ia", label: "Generateur IA" },
+      { href: "/admin/import-api", label: "Import d'articles" },
+    ],
   },
   {
     group: "Personnalisation",

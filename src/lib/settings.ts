@@ -41,6 +41,15 @@ export type AiSettings = {
 
 export type AiSettingsPublic = Pick<AiSettings, "textModel" | "imageModel">;
 
+export type ImportSettings = {
+  /** Token Bearer pour l'import d'articles externes (News Bot, etc.). */
+  token?: string;
+  /** Dernier appel reussi depuis News Bot (verify ou import). */
+  lastBotSeenAt?: string;
+  /** False quand News Bot a signale une deconnexion explicite. */
+  botConnectionActive?: boolean;
+};
+
 export type AllSettings = {
   site: SiteSettings;
   theme: ThemeSettings;
@@ -48,6 +57,7 @@ export type AllSettings = {
   analytics: AnalyticsSettings;
   nav: NavLink[];
   ai: AiSettings;
+  import: ImportSettings;
 };
 
 export const DEFAULT_SETTINGS: AllSettings = {
@@ -88,6 +98,7 @@ export const DEFAULT_SETTINGS: AllSettings = {
     textModel: "openai/gpt-4o-mini",
     imageModel: "google/gemini-2.5-flash-image",
   },
+  import: {},
 };
 
 const KEYS: (keyof AllSettings)[] = [
@@ -97,6 +108,7 @@ const KEYS: (keyof AllSettings)[] = [
   "analytics",
   "nav",
   "ai",
+  "import",
 ];
 
 export async function getSetting<K extends keyof AllSettings>(

@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { saveAdsense, saveAi, saveAnalytics } from "@/app/admin/settings-actions";
+import Link from "next/link";
 import type { AdsenseSettings, AiSettingsPublic, AnalyticsSettings } from "@/lib/settings";
 
 export function SettingsForm({
@@ -209,6 +210,16 @@ export function SettingsForm({
               </p>
             </div>
           </div>
+        </div>
+
+        <div className="admin-card" style={{ gridColumn: "1 / -1" }}>
+          <h2 style={{ fontWeight: 700, marginBottom: 8 }}>Import d&apos;articles (News Bot)</h2>
+          <p style={{ fontSize: 13, color: "var(--admin-muted)", marginBottom: 12 }}>
+            Token unique et statut de connexion avec News Bot (recuperation news).
+          </p>
+          <Link href="/admin/import-api" className="admin-btn admin-btn-primary">
+            Configurer le token d&apos;import
+          </Link>
         </div>
       </div>
     </div>
