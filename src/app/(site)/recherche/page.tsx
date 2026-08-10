@@ -26,7 +26,7 @@ export default async function SearchPage({
             { excerpt: { contains: query } },
           ],
         },
-        orderBy: { publishedAt: "desc" },
+        orderBy: { updatedAt: "desc" },
         include: { cover: true, category: true },
         take: 30,
       })

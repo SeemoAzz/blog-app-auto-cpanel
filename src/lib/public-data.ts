@@ -35,7 +35,7 @@ function buildArticlesWhere(q?: string, categorySlug?: string): Prisma.ArticleWh
 export async function getArticleCards(limit = 24): Promise<ArticleCardData[]> {
   const articles = await prisma.article.findMany({
     where: { status: "published" },
-    orderBy: { publishedAt: "desc" },
+    orderBy: { updatedAt: "desc" },
     take: limit,
     include: { cover: true, category: true },
   });
@@ -61,7 +61,7 @@ export async function getArticlesPaginated({
   const [articles, total] = await Promise.all([
     prisma.article.findMany({
       where,
-      orderBy: { publishedAt: "desc" },
+      orderBy: { updatedAt: "desc" },
       skip: (safePage - 1) * pageSize,
       take: pageSize,
       include: { cover: true, category: true },
