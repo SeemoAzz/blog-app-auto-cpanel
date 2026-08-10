@@ -241,7 +241,8 @@ npm run cpanel:deploy
    ```
 5. Quand le script affiche « Deploiement termine », retournez dans cPanel et cliquez **RESTART** sur l'app.
 
-Le script utilise desormais `npm ci --ignore-scripts --maxsockets=1` pour limiter les forks pendant l'installation.
+Le script utilise `npm ci --maxsockets=1` pour limiter les forks pendant l'installation.
+Il compte les processus via `/proc` (sans `ps`) pour eviter les erreurs fork au demarrage.
 
 Si l'erreur persiste meme avec toutes les apps STOP :
 - Ne deployez qu'**un blog a la fois**

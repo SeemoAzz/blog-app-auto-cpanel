@@ -80,15 +80,41 @@ cpanel_prepare_lve() {
   export npm_config_fetch_retry_mintimeout=30000
 }
 
+# Compte les processus sans fork (lecture /proc en bash pur).
+# ps/whoami/ulimit provoquent eux-memes fork: Resource temporarily unavailable.
+cpanel_count_user_procs() {
+  local count=0 uid="$UID" pid line uid_field
+  for pid in /proc/[0-9]*; do
+    [ -r "$pid/status" ] || continue
+    uid_field=""
+    while IFS= read -r line; do
+      case "$line" in
+        Uid:*)
+          uid_field="${line#Uid:}"
+          uid_field="${uid_field#"${uid_field%%[![:space:]]*}"}"
+          if [ "${uid_field%% *}" = "$uid" ]; then
+            count=$((count + 1))
+          fi
+          break
+          ;;
+      esac
+    done < "$pid/status"
+  done
+  echo "$count"
+}
+
 cpanel_warn_lve() {
+  local proc_count
   echo "==> CloudLinux LVE (limite de processus)"
   echo "    AVANT npm : cPanel > Setup Node.js App > STOP sur TOUTES vos apps Node.js"
   echo "    Sinon : fork: Resource temporarily unavailable"
-  if command -v ulimit >/dev/null 2>&1; then
-    echo "    ulimit processus (-u): $(ulimit -u 2>/dev/null || echo '?')"
-  fi
-  if command -v ps >/dev/null 2>&1; then
-    echo "    Processus actifs ($(whoami)): $(ps -u "$(whoami)" 2>/dev/null | wc -l | tr -d ' ')"
+  proc_count="$(cpanel_count_user_procs)"
+  echo "    Processus actifs (UID $UID): $proc_count"
+  if [ "$proc_count" -gt 15 ]; then
+    echo ""
+    echo "ERREUR: trop de processus ($proc_count) — STOP toutes les apps Node.js dans cPanel,"
+    echo "       attendez 1 min, puis relancez : npm run cpanel:deploy"
+    exit 1
   fi
 }
 
@@ -97,8 +123,8 @@ cpanel_npm_install() {
   cpanel_warn_lve
 
   echo "==> Installation npm (node_modules local)..."
-  echo "    npm ci --ignore-scripts : moins de forks (postinstalls apres)"
-  echo "    Duree typique : 5 a 30 min sur hebergement mutualise."
+  echo "    Sur hebergement mutualise : 5 a 30 min sans autre ligne est normal."
+  echo "    Verifiez l'activite : ps aux | grep npm   (autre session SSH)"
 
   local npm_flags=(
     --include=dev
@@ -106,7 +132,6 @@ cpanel_npm_install() {
     --no-fund
     --loglevel=info
     --maxsockets=1
-    --ignore-scripts
   )
   local start_ts elapsed attempt
 
