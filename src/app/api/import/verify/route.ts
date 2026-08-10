@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { recordBotConnection, verifyImportToken } from "@/lib/import-auth";
-import { isAiConfigured } from "@/lib/ai/openrouter";
+import { isAiConfigured, verifyOpenRouterConnection } from "@/lib/ai/openrouter";
 import { getSetting } from "@/lib/settings";
+
+export const runtime = "nodejs";
 
 export async function GET(req: Request) {
   if (!(await verifyImportToken(req))) {
@@ -10,14 +12,16 @@ export async function GET(req: Request) {
 
   await recordBotConnection();
 
-  const [site, aiConfigured] = await Promise.all([
+  const [site, aiConfigured, aiVerified] = await Promise.all([
     getSetting("site"),
     isAiConfigured(),
+    verifyOpenRouterConnection(),
   ]);
 
   return NextResponse.json({
     ok: true,
     siteTitle: site.title,
     aiConfigured,
+    aiVerified,
   });
 }

@@ -132,6 +132,7 @@ DATABASE_URL="file:/home/VOTRE_USER/blogdata_recipe/prod.db"
 | `DATABASE_URL` | Identique a `cpanel.config` (ex. `file:/home/VOTRE_USER/blogdata_recipe/prod.db`) |
 | `AUTH_SECRET` | une valeur aleatoire de 48+ caracteres |
 | `NEXT_PUBLIC_SITE_URL` | Identique a `CPANEL_SITE_URL` dans `cpanel.config` |
+| `OPENROUTER_API_KEY` | Cle API OpenRouter (`sk-or-v1-...`) — requise pour l'import News Bot et le generateur IA |
 | `ADMIN_EMAIL` | email admin |
 | `ADMIN_PASSWORD` | mot de passe admin (pour le seed) |
 
@@ -218,6 +219,22 @@ npm run cpanel:deploy
 ---
 
 ## Depannage
+
+### OpenRouter 401 — `Missing Authentication header` (import News Bot)
+
+**Symptome** : le bot fonctionne en local mais echoue vers le site heberge avec une erreur OpenRouter 401.
+
+**Cause** : la cle API OpenRouter n'est pas disponible sur le serveur de production (base SQLite separee de votre PC local).
+
+**Solution** :
+
+1. cPanel > **Setup Node.js App** > votre app > **Environment Variables**
+2. Ajoutez `OPENROUTER_API_KEY` = votre cle `sk-or-v1-...` (depuis [openrouter.ai/keys](https://openrouter.ai/keys))
+3. Cliquez **Save** puis **RESTART** l'application Node.js
+4. **Alternative** : connectez-vous a `https://votre-domaine.com/admin/reglages` et enregistrez la cle OpenRouter
+5. Testez la connexion dans News Bot > Connexion blog (doit afficher IA fonctionnelle apres redeploiement du code recent)
+
+> La cle configuree sur `localhost` n'est **pas** copiee automatiquement vers Namecheap. Chaque instance de blog a sa propre base `prod.db`.
 
 ### Erreur `fork: Resource temporarily unavailable` (npm / CloudLinux LVE)
 

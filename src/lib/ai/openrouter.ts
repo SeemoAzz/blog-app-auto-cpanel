@@ -4,6 +4,9 @@ import { getSetting } from "@/lib/settings";
 const BASE = "https://openrouter.ai/api/v1";
 
 async function getApiKey(): Promise<string | undefined> {
+  const envKey = process.env.OPENROUTER_API_KEY?.trim();
+  if (envKey) return envKey;
+
   const ai = await getSetting("ai");
   const dbKey = ai.apiKey?.trim();
   return dbKey || undefined;
@@ -13,19 +16,44 @@ export async function isAiConfigured(): Promise<boolean> {
   return Boolean(await getApiKey());
 }
 
-async function headers() {
+/** Verifie que la cle OpenRouter fonctionne vraiment (pas seulement presente). */
+export async function verifyOpenRouterConnection(): Promise<boolean> {
+  const key = await getApiKey();
+  if (!key) return false;
+
+  try {
+    const res = await fetch(`${BASE}/models`, {
+      method: "GET",
+      headers: buildOpenRouterHeaders(key),
+      signal: AbortSignal.timeout(15_000),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+function buildOpenRouterHeaders(key: string): Headers {
+  const headers = new Headers();
+  headers.set("Authorization", `Bearer ${key}`);
+  headers.set("Content-Type", "application/json");
+  headers.set(
+    "HTTP-Referer",
+    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+  );
+  headers.set("Referer", process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000");
+  headers.set("X-Title", "Blog AdSense Builder");
+  return headers;
+}
+
+async function openRouterHeaders(): Promise<Headers> {
   const key = await getApiKey();
   if (!key) {
     throw new Error(
-      "OpenRouter non configure. Ajoute ta cle API dans Admin > Reglages.",
+      "OpenRouter non configure. Ajoute ta cle API dans Admin > Reglages ou la variable OPENROUTER_API_KEY sur le serveur.",
     );
   }
-  return {
-    Authorization: `Bearer ${key}`,
-    "Content-Type": "application/json",
-    "X-Title": "Blog AdSense Builder",
-    "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-  };
+  return buildOpenRouterHeaders(key);
 }
 
 async function getModels() {
@@ -59,12 +87,17 @@ export async function generateText(opts: {
 
   const res = await fetch(`${BASE}/chat/completions`, {
     method: "POST",
-    headers: await headers(),
+    headers: await openRouterHeaders(),
     body: JSON.stringify(body),
   });
 
   if (!res.ok) {
     const txt = await res.text();
+    if (res.status === 401) {
+      throw new Error(
+        "OpenRouter 401 : cle API invalide ou absente. Verifie Admin > Reglages ou OPENROUTER_API_KEY sur le serveur (cPanel > Setup Node.js App > Environment Variables).",
+      );
+    }
     throw new Error(`OpenRouter (texte) ${res.status}: ${txt.slice(0, 300)}`);
   }
 
@@ -92,6 +125,7 @@ export async function generateImage(opts: {
 }): Promise<string> {
   const { imageModel } = await getModels();
   const model = opts.model || imageModel;
+  const headers = await openRouterHeaders();
 
   const body: Record<string, unknown> = {
     model,
@@ -104,7 +138,7 @@ export async function generateImage(opts: {
 
   const res = await fetch(`${BASE}/chat/completions`, {
     method: "POST",
-    headers: await headers(),
+    headers,
     body: JSON.stringify(body),
   });
 
@@ -122,7 +156,7 @@ export async function generateImage(opts: {
   // Fallback: endpoint dedie /images (b64_json)
   const res2 = await fetch(`${BASE}/images`, {
     method: "POST",
-    headers: await headers(),
+    headers,
     body: JSON.stringify({
       model,
       prompt: opts.prompt,
