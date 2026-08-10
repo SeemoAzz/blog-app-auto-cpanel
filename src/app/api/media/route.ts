@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { saveMediaFromBuffer } from "@/lib/media";
+import { saveMediaFromBuffer, resolveMediaUrl } from "@/lib/media";
 
 const MAX_SIZE = 12 * 1024 * 1024; // 12 Mo
 const ALLOWED = [
@@ -23,7 +23,12 @@ export async function GET() {
   const items = await prisma.media.findMany({
     orderBy: { createdAt: "desc" },
   });
-  return NextResponse.json({ items });
+  return NextResponse.json({
+    items: items.map((item) => ({
+      ...item,
+      url: resolveMediaUrl(item.url) || item.url,
+    })),
+  });
 }
 
 export async function POST(req: Request) {

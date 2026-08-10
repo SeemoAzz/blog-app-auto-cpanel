@@ -8,6 +8,7 @@ import { getArticleCards, getPublicCategories } from "@/lib/public-data";
 import { emptyData } from "@/puck/config";
 import { ArticlesPageEditor } from "@/components/admin/ArticlesPageEditor";
 import { ContentEditor } from "@/components/editor/ContentEditor";
+import { resolveMediaUrl, resolveMediaUrlsDeep } from "@/lib/media";
 
 export const dynamic = "force-dynamic";
 
@@ -63,7 +64,7 @@ export default async function EditPagePage({
   return (
     <ContentEditor
       kind="page"
-      initialData={parseData(page.puckData)}
+      initialData={resolveMediaUrlsDeep(parseData(page.puckData))}
       initialMeta={{
         id: page.id,
         title: page.title,
@@ -75,7 +76,7 @@ export default async function EditPagePage({
         navOrder: page.navOrder,
         metaTitle: page.metaTitle || "",
         metaDescription: page.metaDescription || "",
-        ogImage: page.ogImage || "",
+        ogImage: resolveMediaUrl(page.ogImage) || "",
       }}
       previewArticles={previewArticles}
       adsenseClientId={adsense.enabled ? adsense.clientId : ""}

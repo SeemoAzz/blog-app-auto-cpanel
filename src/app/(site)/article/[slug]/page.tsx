@@ -5,6 +5,7 @@ import { splitArticleByParts } from "@/lib/article-parts";
 import { getSetting } from "@/lib/settings";
 import { PublicRender } from "@/components/PublicRender";
 import { ArticlePaginatedReader } from "@/components/site/ArticlePaginatedReader";
+import { resolveMediaUrl } from "@/lib/media";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export async function generateMetadata({
   const article = await getArticle(slug);
   if (!article) return { title: "Article introuvable" };
   const site = await getSetting("site");
-  const image = article.ogImage || article.cover?.url || undefined;
+  const image = resolveMediaUrl(article.ogImage || article.cover?.url) || undefined;
   return {
     title: article.metaTitle || `${article.title} - ${site.title}`,
     description: article.metaDescription || article.excerpt || undefined,
@@ -57,7 +58,7 @@ export default async function ArticlePage({
 
   const [site, adsense] = await Promise.all([getSetting("site"), getSetting("adsense")]);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
-  const image = article.ogImage || article.cover?.url || undefined;
+  const image = resolveMediaUrl(article.ogImage || article.cover?.url) || undefined;
   const { parts, breaks } = splitArticleByParts(article.puckData);
   const adsenseClientId = adsense.enabled ? adsense.clientId : "";
 

@@ -5,6 +5,7 @@ import { getSetting } from "@/lib/settings";
 import { getArticleCards } from "@/lib/public-data";
 import { emptyData } from "@/puck/config";
 import { ContentEditor } from "@/components/editor/ContentEditor";
+import { resolveMediaUrl, resolveMediaUrlsDeep } from "@/lib/media";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ export default async function EditArticlePage({
   return (
     <ContentEditor
       kind="article"
-      initialData={parseData(article.puckData)}
+      initialData={resolveMediaUrlsDeep(parseData(article.puckData))}
       initialMeta={{
         id: article.id,
         title: article.title,
@@ -44,10 +45,10 @@ export default async function EditArticlePage({
         locale: article.locale,
         categoryId: article.categoryId,
         coverMediaId: article.coverMediaId,
-        coverUrl: article.cover?.url || null,
+        coverUrl: resolveMediaUrl(article.cover?.url) || null,
         metaTitle: article.metaTitle || "",
         metaDescription: article.metaDescription || "",
-        ogImage: article.ogImage || "",
+        ogImage: resolveMediaUrl(article.ogImage) || "",
       }}
       categories={categories.map((c) => ({ id: c.id, name: c.name }))}
       previewArticles={previewArticles}

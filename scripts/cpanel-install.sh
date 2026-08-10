@@ -21,7 +21,7 @@ if [ ! -f "prisma/schema.prisma" ]; then
 fi
 
 cpanel_ensure_blogdata
-mkdir -p public/uploads && chmod 755 public/uploads
+mkdir -p public/uploads data/uploads && chmod 755 public/uploads data/uploads
 
 # cPanel lie node_modules -> nodevenv : Turbopack/webpack echoue au build
 cpanel_ensure_local_node_modules

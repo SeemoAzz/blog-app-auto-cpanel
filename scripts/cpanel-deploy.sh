@@ -25,6 +25,6 @@ cpanel_prisma "$SCHEMA" migrate deploy
 echo "==> Build Next.js (webpack, 1 worker)..."
 cpanel_run_build
 
-mkdir -p public/uploads
+mkdir -p public/uploads data/uploads
 
 echo "==> Deploiement termine. Redemarrez l'application Node.js dans cPanel."

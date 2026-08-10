@@ -1,6 +1,7 @@
 import { prisma } from "./prisma";
 import type { ArticleCardData } from "@/puck/config";
 import type { Prisma } from "@prisma/client";
+import { resolveMediaUrl } from "./media";
 
 type ArticleWithRelations = Prisma.ArticleGetPayload<{
   include: { cover: true; category: true };
@@ -11,7 +12,7 @@ function mapArticleToCard(a: ArticleWithRelations): ArticleCardData {
     title: a.title,
     slug: a.slug,
     excerpt: a.excerpt,
-    cover: a.cover?.url ?? a.ogImage ?? null,
+    cover: resolveMediaUrl(a.cover?.url ?? a.ogImage) ?? null,
     categoryName: a.category?.name ?? null,
     categorySlug: a.category?.slug ?? null,
   };

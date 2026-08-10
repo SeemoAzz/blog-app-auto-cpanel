@@ -16,6 +16,8 @@ export type AiArticle = {
   heroImage?: string | null;
   heroImagePrompt?: string;
   sections: AiSection[];
+  /** Images source non placees dans une section (ajoutees en fin d'article). */
+  extraImages?: { url: string; alt: string }[];
 };
 
 let counter = 0;
@@ -81,6 +83,21 @@ export function articleToPuckData(
       });
     }
   });
+
+  for (const img of article.extraImages ?? []) {
+    content.push({
+      type: "Image",
+      props: {
+        id: uid("Image"),
+        media: img.url,
+        alt: img.alt || "",
+        caption: "",
+        width: "860px",
+        rounded: "var(--radius)",
+        align: "center",
+      },
+    });
+  }
 
   return {
     root: { props: { title: article.title } },

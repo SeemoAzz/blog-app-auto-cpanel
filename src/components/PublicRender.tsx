@@ -3,6 +3,7 @@ import type { Data } from "@puckeditor/core";
 import { config } from "@/puck/config";
 import { getArticleCards } from "@/lib/public-data";
 import { getSetting } from "@/lib/settings";
+import { resolveMediaUrlsDeep } from "@/lib/media";
 
 function safeParse(json: string): Data {
   try {
@@ -21,7 +22,7 @@ function safeParse(json: string): Data {
  * Injecte l'ID AdSense et la liste d'articles via metadata.
  */
 export async function PublicRender({ puckData }: { puckData: string }) {
-  const data = safeParse(puckData);
+  const data = resolveMediaUrlsDeep(safeParse(puckData));
 
   const [adsense, articles] = await Promise.all([
     getSetting("adsense"),
