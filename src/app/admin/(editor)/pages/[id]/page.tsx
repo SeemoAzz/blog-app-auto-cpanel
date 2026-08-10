@@ -30,9 +30,10 @@ export default async function EditPagePage({
   if (!page) notFound();
 
   if (isArticlesPage(page)) {
-    const [previewArticles, categories] = await Promise.all([
-      getArticleCards(6),
+    const [previewArticles, categories, adsense] = await Promise.all([
+      getArticleCards(8),
       getPublicCategories(),
+      getSetting("adsense"),
     ]);
 
     return (
@@ -49,6 +50,7 @@ export default async function EditPagePage({
         }}
         previewArticles={previewArticles}
         categories={categories}
+        adsenseClientId={adsense.enabled ? adsense.clientId : ""}
       />
     );
   }

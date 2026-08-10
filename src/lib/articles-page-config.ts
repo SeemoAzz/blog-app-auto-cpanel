@@ -6,6 +6,17 @@ export type FiltersPlacement = "top" | "sidebar-left" | "sidebar-right";
 
 export type FiltersDirection = "row" | "column";
 
+export type ArticlesAdFormat = "auto" | "horizontal" | "rectangle" | "vertical";
+
+export type ArticlesPageAdSlot = {
+  id: string;
+  /** Insérer une pub après chaque N articles (ex: 4 → après le 4e, 8e, 12e…) */
+  every: number;
+  slotId: string;
+  format: ArticlesAdFormat;
+  label: string;
+};
+
 export type ArticlesPageConfig = {
   title: string;
   showTitle: boolean;
@@ -23,6 +34,10 @@ export type ArticlesPageConfig = {
   filters: {
     placement: FiltersPlacement;
     direction: FiltersDirection;
+  };
+  ads: {
+    enabled: boolean;
+    slots: ArticlesPageAdSlot[];
   };
 };
 
@@ -52,6 +67,13 @@ export const FILTERS_DIRECTION_OPTIONS: { value: FiltersDirection; label: string
   { value: "column", label: "Empiles (colonne)" },
 ];
 
+export const ARTICLES_AD_FORMAT_OPTIONS: { value: ArticlesAdFormat; label: string }[] = [
+  { value: "auto", label: "Auto (responsive)" },
+  { value: "horizontal", label: "Horizontal (banniere)" },
+  { value: "rectangle", label: "Rectangle" },
+  { value: "vertical", label: "Vertical" },
+];
+
 export const DEFAULT_ARTICLES_PAGE_CONFIG: ArticlesPageConfig = {
   title: "Tous les articles",
   showTitle: true,
@@ -69,6 +91,10 @@ export const DEFAULT_ARTICLES_PAGE_CONFIG: ArticlesPageConfig = {
   filters: {
     placement: "top",
     direction: "row",
+  },
+  ads: {
+    enabled: false,
+    slots: [],
   },
 };
 
@@ -101,6 +127,11 @@ export function mergeArticlesPageConfig(
       ...partial.categoryFilter,
     },
     filters: { ...DEFAULT_ARTICLES_PAGE_CONFIG.filters, ...partial.filters },
+    ads: {
+      ...DEFAULT_ARTICLES_PAGE_CONFIG.ads,
+      ...partial.ads,
+      slots: partial.ads?.slots ?? DEFAULT_ARTICLES_PAGE_CONFIG.ads.slots,
+    },
   };
 }
 

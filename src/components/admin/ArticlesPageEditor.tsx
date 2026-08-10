@@ -4,17 +4,18 @@ import Link from "next/link";
 import { useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { saveArticlesPage } from "@/app/admin/content-actions";
-import { ArticleCard } from "@/components/site/ArticleCard";
 import { ArticlesFilters } from "@/components/site/ArticlesFilters";
+import { ArticlesItemsGrid } from "@/components/site/ArticlesItemsGrid";
 import type { ArticleCardData } from "@/puck/config";
 import type { ArticlesPageConfig } from "@/lib/articles-page-config";
 import {
+  ARTICLES_AD_FORMAT_OPTIONS,
   ARTICLES_CARD_STYLE_OPTIONS,
   ARTICLES_LAYOUT_OPTIONS,
   FILTERS_DIRECTION_OPTIONS,
   FILTERS_PLACEMENT_OPTIONS,
-  layoutToGridClass,
 } from "@/lib/articles-page-config";
+import { createArticlesPageAdSlot } from "@/lib/articles-page-ads";
 
 type PageMeta = {
   id: string;
@@ -31,6 +32,7 @@ type Props = {
   initialMeta: PageMeta;
   previewArticles: ArticleCardData[];
   categories: { slug: string; name: string }[];
+  adsenseClientId?: string;
 };
 
 export function ArticlesPageEditor({
@@ -38,6 +40,7 @@ export function ArticlesPageEditor({
   initialMeta,
   previewArticles,
   categories,
+  adsenseClientId = "",
 }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -49,7 +52,7 @@ export function ArticlesPageEditor({
     setConfig((c) => ({ ...c, ...patch }));
 
   const updateNested = <
-    K extends "search" | "categoryFilter" | "filters",
+    K extends "search" | "categoryFilter" | "filters" | "ads",
     P extends Partial<ArticlesPageConfig[K]>,
   >(
     key: K,
@@ -79,8 +82,16 @@ export function ArticlesPageEditor({
     });
   };
 
-  const previewItems = previewArticles.slice(0, config.layout === "list" ? 3 : 6);
-  const gridClass = layoutToGridClass(config.layout);
+  const previewItems = previewArticles.slice(0, config.layout === "list" ? 4 : 8);
+
+  const previewGrid = (
+    <ArticlesItemsGrid
+      config={config}
+      articles={previewItems}
+      clientId={adsenseClientId}
+      preview
+    />
+  );
 
   return (
     <div style={{ minHeight: "100vh", background: "#f3f4f6" }}>
@@ -282,6 +293,140 @@ export function ArticlesPageEditor({
             </p>
           </Section>
 
+          <Section title="Publicites entre les articles">
+            <label className="admin-row" style={{ gap: 8, marginBottom: 12 }}>
+              <input
+                type="checkbox"
+                checked={config.ads.enabled}
+                onChange={(e) => updateNested("ads", { enabled: e.target.checked })}
+              />
+              <span>Activer les publicites dans la liste</span>
+            </label>
+            {config.ads.enabled && (
+              <>
+                {config.ads.slots.length === 0 && (
+                  <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 12px" }}>
+                    Ajoutez un emplacement pour afficher des pubs entre les cartes.
+                  </p>
+                )}
+                {config.ads.slots.map((slot, index) => (
+                  <div
+                    key={slot.id}
+                    style={{
+                      border: "1px solid #e5e7eb",
+                      borderRadius: 8,
+                      padding: 12,
+                      marginBottom: 12,
+                      background: "#f9fafb",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 10,
+                      }}
+                    >
+                      <strong style={{ fontSize: 13 }}>Emplacement {index + 1}</strong>
+                      <button
+                        type="button"
+                        className="admin-btn admin-btn-sm"
+                        onClick={() =>
+                          updateNested("ads", {
+                            slots: config.ads.slots.filter((s) => s.id !== slot.id),
+                          })
+                        }
+                      >
+                        Supprimer
+                      </button>
+                    </div>
+                    <Field label="Tous les N articles">
+                      <input
+                        className="admin-input"
+                        type="number"
+                        min={1}
+                        max={50}
+                        value={slot.every}
+                        onChange={(e) => {
+                          const every = Math.min(50, Math.max(1, Number(e.target.value) || 1));
+                          updateNested("ads", {
+                            slots: config.ads.slots.map((s) =>
+                              s.id === slot.id ? { ...s, every } : s,
+                            ),
+                          });
+                        }}
+                      />
+                    </Field>
+                    <Field label="ID d'emplacement (data-ad-slot)">
+                      <input
+                        className="admin-input"
+                        value={slot.slotId}
+                        onChange={(e) =>
+                          updateNested("ads", {
+                            slots: config.ads.slots.map((s) =>
+                              s.id === slot.id ? { ...s, slotId: e.target.value.trim() } : s,
+                            ),
+                          })
+                        }
+                        placeholder="1234567890"
+                      />
+                    </Field>
+                    <Field label="Format">
+                      <select
+                        className="admin-select"
+                        value={slot.format}
+                        onChange={(e) =>
+                          updateNested("ads", {
+                            slots: config.ads.slots.map((s) =>
+                              s.id === slot.id
+                                ? { ...s, format: e.target.value as typeof slot.format }
+                                : s,
+                            ),
+                          })
+                        }
+                      >
+                        {ARTICLES_AD_FORMAT_OPTIONS.map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                    <Field label="Etiquette">
+                      <input
+                        className="admin-input"
+                        value={slot.label}
+                        onChange={(e) =>
+                          updateNested("ads", {
+                            slots: config.ads.slots.map((s) =>
+                              s.id === slot.id ? { ...s, label: e.target.value } : s,
+                            ),
+                          })
+                        }
+                      />
+                    </Field>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="admin-btn admin-btn-sm"
+                  onClick={() =>
+                    updateNested("ads", {
+                      slots: [...config.ads.slots, createArticlesPageAdSlot()],
+                    })
+                  }
+                >
+                  + Ajouter un emplacement
+                </button>
+                <p style={{ fontSize: 12, color: "#6b7280", margin: "12px 0 0" }}>
+                  Les pubs s&apos;affichent comme des cartes dans la grille. AdSense doit etre
+                  active dans Reglages.
+                </p>
+              </>
+            )}
+          </Section>
+
           <Section title="Navigation et SEO">
             <Field label="Titre admin">
               <input
@@ -374,16 +519,7 @@ export function ArticlesPageEditor({
                     />
                   </aside>
                   <div className="articles-main">
-                    <div className={gridClass} style={{ gap: config.layout === "list" ? 12 : 16 }}>
-                      {previewItems.map((a) => (
-                        <ArticleCard
-                          key={a.slug}
-                          article={a}
-                          cardStyle={config.cardStyle}
-                          layout={config.layout}
-                        />
-                      ))}
-                    </div>
+                    {previewGrid}
                   </div>
                 </div>
               ) : (
@@ -396,16 +532,7 @@ export function ArticlesPageEditor({
                       preview
                     />
                   </div>
-                  <div className={gridClass} style={{ gap: config.layout === "list" ? 12 : 16 }}>
-                    {previewItems.map((a) => (
-                      <ArticleCard
-                        key={a.slug}
-                        article={a}
-                        cardStyle={config.cardStyle}
-                        layout={config.layout}
-                      />
-                    ))}
-                  </div>
+                  {previewGrid}
                 </>
               )}
             </div>

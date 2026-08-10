@@ -1,10 +1,10 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { ArticleCard } from "@/components/site/ArticleCard";
 import { ArticlesFilters } from "@/components/site/ArticlesFilters";
+import { ArticlesItemsGrid } from "@/components/site/ArticlesItemsGrid";
 import type { ArticlesPageConfig } from "@/lib/articles-page-config";
-import { layoutToGridClass } from "@/lib/articles-page-config";
 import { getArticlesPaginated, getPublicCategories } from "@/lib/public-data";
+import { getSetting } from "@/lib/settings";
 
 const inputStyle: CSSProperties = {
   border: "1px solid var(--color-border)",
@@ -110,32 +110,6 @@ function Pagination({
   );
 }
 
-function ArticlesGrid({
-  config,
-  items,
-}: {
-  config: ArticlesPageConfig;
-  items: Parameters<typeof ArticleCard>[0]["article"][];
-}) {
-  if (items.length === 0) return null;
-
-  const gridClass = layoutToGridClass(config.layout);
-  const gap = config.layout === "list" ? 12 : 20;
-
-  return (
-    <div className={gridClass} style={{ gap }}>
-      {items.map((article) => (
-        <ArticleCard
-          key={article.slug}
-          article={article}
-          cardStyle={config.cardStyle}
-          layout={config.layout}
-        />
-      ))}
-    </div>
-  );
-}
-
 export async function ArticlesArchive({
   config,
   page,
@@ -149,10 +123,13 @@ export async function ArticlesArchive({
 }) {
   const pageSize = Math.min(50, Math.max(1, config.pageSize || 10));
 
-  const [{ items, total, totalPages }, categories] = await Promise.all([
+  const [{ items, total, totalPages }, categories, adsense] = await Promise.all([
     getArticlesPaginated({ page, pageSize, q, categorySlug: category }),
     getPublicCategories(),
+    getSetting("adsense"),
   ]);
+
+  const adsenseClientId = adsense.enabled ? adsense.clientId : "";
 
   const hasFilters = Boolean(q || category);
   const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
@@ -179,7 +156,9 @@ export async function ArticlesArchive({
     </p>
   );
 
-  const grid = <ArticlesGrid config={config} items={items} />;
+  const grid = (
+    <ArticlesItemsGrid config={config} articles={items} clientId={adsenseClientId} />
+  );
   const pagination = totalPages > 1 ? (
     <Pagination page={page} totalPages={totalPages} q={q} category={category} />
   ) : null;

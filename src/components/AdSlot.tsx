@@ -9,6 +9,8 @@ type Props = {
   label?: string;
   /** true dans l'editeur Puck: on montre un apercu, pas de vraie pub */
   preview?: boolean;
+  /** Sans marge externe — pour integration dans une carte article */
+  compact?: boolean;
 };
 
 const FORMAT_SIZES: Record<string, { minHeight: number }> = {
@@ -24,6 +26,7 @@ export function AdSlot({
   format = "auto",
   label = "Publicite",
   preview = false,
+  compact = false,
 }: Props) {
   const ref = useRef<HTMLModElement | null>(null);
   const pushed = useRef(false);
@@ -42,6 +45,7 @@ export function AdSlot({
   }, [preview, configured]);
 
   const size = FORMAT_SIZES[format] ?? FORMAT_SIZES.auto;
+  const outerMargin = compact ? 0 : "16px 0";
 
   // Apercu (editeur) ou pub non configuree: placeholder visuel
   if (preview || !configured) {
@@ -52,12 +56,13 @@ export function AdSlot({
           alignItems: "center",
           justifyContent: "center",
           minHeight: size.minHeight,
+          width: compact ? "100%" : undefined,
           border: "1px dashed var(--color-border, #cbd5e1)",
           borderRadius: "var(--radius, 8px)",
           color: "var(--color-muted, #94a3b8)",
           background: "color-mix(in srgb, currentColor 4%, transparent)",
           fontSize: 13,
-          margin: "16px 0",
+          margin: outerMargin,
           textAlign: "center",
           padding: 12,
         }}
@@ -70,7 +75,7 @@ export function AdSlot({
   }
 
   return (
-    <div style={{ margin: "16px 0", textAlign: "center" }}>
+    <div style={{ margin: outerMargin, textAlign: "center", width: compact ? "100%" : undefined }}>
       {label && (
         <div
           style={{
