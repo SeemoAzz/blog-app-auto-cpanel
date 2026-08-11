@@ -50,6 +50,13 @@ export type ImportSettings = {
   botConnectionActive?: boolean;
 };
 
+export type ExportSettings = {
+  /** Cle API Bearer pour l'export des titres et images hero. */
+  apiKey?: string;
+  /** Dernier appel reussi sur l'API d'export. */
+  lastAccessAt?: string;
+};
+
 export type AllSettings = {
   site: SiteSettings;
   theme: ThemeSettings;
@@ -58,6 +65,7 @@ export type AllSettings = {
   nav: NavLink[];
   ai: AiSettings;
   import: ImportSettings;
+  export: ExportSettings;
 };
 
 export const DEFAULT_SETTINGS: AllSettings = {
@@ -99,6 +107,7 @@ export const DEFAULT_SETTINGS: AllSettings = {
     imageModel: "google/gemini-2.5-flash-image",
   },
   import: {},
+  export: {},
 };
 
 const KEYS: (keyof AllSettings)[] = [
@@ -109,6 +118,7 @@ const KEYS: (keyof AllSettings)[] = [
   "nav",
   "ai",
   "import",
+  "export",
 ];
 
 export async function getSetting<K extends keyof AllSettings>(

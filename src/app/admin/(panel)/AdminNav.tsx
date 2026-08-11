@@ -19,6 +19,7 @@ const NAV: { group: string; items: { href: string; label: string }[] }[] = [
     items: [
       { href: "/admin/ia", label: "Generateur IA" },
       { href: "/admin/import-api", label: "Import d'articles" },
+      { href: "/admin/export-api", label: "Export d'articles" },
     ],
   },
   {

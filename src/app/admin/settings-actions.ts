@@ -12,8 +12,10 @@ import {
   type AnalyticsSettings,
   type AiSettings,
   type ImportSettings,
+  type ExportSettings,
 } from "@/lib/settings";
 import { generateImportToken } from "@/lib/import-auth";
+import { generateExportApiKey } from "@/lib/export-auth";
 
 async function requireAuth() {
   const session = await getSession();
@@ -143,5 +145,72 @@ export async function resetBotConnectionStatus() {
   const { clearBotConnection } = await import("@/lib/import-auth");
   await clearBotConnection();
   revalidatePath("/admin/import-api");
+  return { ok: true as const };
+}
+
+export async function saveExport(input: ExportSettings) {
+  await requireAuth();
+  await setSetting("export", input);
+  return { ok: true as const };
+}
+
+/** Genere une cle API uniquement si elle n'existe pas encore. */
+export async function ensureExportApiKey() {
+  await requireAuth();
+  const current = await getSetting("export");
+  const existing = current.apiKey?.trim();
+  if (existing) {
+    return { ok: true as const, apiKey: existing, created: false as const };
+  }
+  const apiKey = generateExportApiKey();
+  await setSetting("export", {
+    ...current,
+    apiKey,
+    lastAccessAt: undefined,
+  });
+  revalidatePath("/admin/export-api");
+  return { ok: true as const, apiKey, created: true as const };
+}
+
+/** Remplace la cle API actuelle par une nouvelle. */
+export async function regenerateExportApiKey() {
+  await requireAuth();
+  const current = await getSetting("export");
+  const apiKey = generateExportApiKey();
+  await setSetting("export", {
+    ...current,
+    apiKey,
+    lastAccessAt: undefined,
+  });
+  revalidatePath("/admin/export-api");
+  return { ok: true as const, apiKey };
+}
+
+/** Supprime la cle API d'export. */
+export async function deleteExportApiKey() {
+  await requireAuth();
+  const current = await getSetting("export");
+  await setSetting("export", {
+    ...current,
+    apiKey: undefined,
+    lastAccessAt: undefined,
+  });
+  revalidatePath("/admin/export-api");
+  return { ok: true as const };
+}
+
+/** Enregistre la cle API d'export (sans la regenerer). */
+export async function saveExportApiKey(apiKey: string) {
+  await requireAuth();
+  const trimmed = apiKey.trim();
+  if (!trimmed) throw new Error("Cle API requise");
+  const current = await getSetting("export");
+  const keyChanged = current.apiKey?.trim() !== trimmed;
+  await setSetting("export", {
+    ...current,
+    apiKey: trimmed,
+    ...(keyChanged ? { lastAccessAt: undefined } : {}),
+  });
+  revalidatePath("/admin/export-api");
   return { ok: true as const };
 }
